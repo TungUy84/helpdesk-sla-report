@@ -1,201 +1,161 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
-  <title>Response-time report</title>
-  <style>
-    body { font-family: sans-serif; margin: 1.5rem; }
-    form, .controls { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; }
-    table { border-collapse: collapse; margin: 0.5rem 0 1.5rem; }
-    th, td { border: 1px solid #999; padding: 4px 10px; text-align: left; }
-    th { background: #eee; }
-    .late, .miss { color: #b00020; font-weight: bold; }
-    .ok { color: #0a7d2c; }
-    .pager { display: flex; gap: 0.5rem; align-items: center; margin: 0.5rem 0; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bluebay Properties — SLA Response-Time Report</title>
+  <link rel="stylesheet" href="/styles.css">
 </head>
+
 <body>
-  <h1>Response-time report</h1>
-  <form id="f">
-    <label>From <input type="date" name="from" value="2026-10-01" required></label>
-    <label>To <input type="date" name="to" value="2026-10-31" required></label>
-    <label>Site
-      <select name="site_id" id="site_id">
-        <option value="">All sites</option>
-        <option value="11">11 - Singapore</option>
-        <option value="12">12 - Sydney</option>
-        <option value="13">13 - Jakarta</option>
-      </select>
-    </label>
-    <label>Responder
-      <select name="responder_id" id="responder_id">
-        <option value="">All responders</option>
-      </select>
-    </label>
-    <label>Within target
-      <select name="within_target">
-        <option value="">Any</option>
-        <option value="true">Yes</option>
-        <option value="false">No</option>
-      </select>
-    </label>
-    <label>Completed late
-      <select name="late">
-        <option value="">Any</option>
-        <option value="true">Yes</option>
-        <option value="false">No</option>
-      </select>
-    </label>
-    <label>Sort
-      <select name="sort">
-        <option value="id">ID ↑</option>
-        <option value="-id">ID ↓</option>
-        <option value="response_business_minutes">Response min ↑</option>
-        <option value="-response_business_minutes">Response min ↓</option>
-      </select>
-    </label>
-    <label>Page size
-      <select name="limit">
-        <option value="25">25</option>
-        <option value="50" selected>50</option>
-        <option value="100">100</option>
-        <option value="200">200</option>
-      </select>
-    </label>
-    <button type="submit">Run report</button>
-  </form>
-  <p id="status"></p>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Bluebay Properties — SLA Response-Time Report</h1>
+        <p>Singapore, Sydney &amp; Jakarta helpdesk performance in site-local business hours</p>
+      </div>
+      <div id="readyBadge" class="ready-badge">
+        <span class="dot"></span>
+        <span id="readyText">Checking /ready...</span>
+      </div>
+    </header>
 
-  <h2>Responders summary</h2>
-  <table id="responders">
-    <thead><tr><th>ID</th><th>Responder</th><th>Requests</th><th>Within target</th><th>Completed late</th></tr></thead>
-    <tbody></tbody>
-  </table>
+    <div class="card">
+      <div class="presets">
+        <span>Quick ranges:</span>
+        <button type="button" class="preset-btn" data-from="2026-10-01" data-to="2026-10-31">October 2026</button>
+        <button type="button" class="preset-btn" data-from="2026-10-12" data-to="2026-10-18">12–18 Oct 2026</button>
+        <button type="button" class="preset-btn" data-from="2026-05-01" data-to="2026-10-31">Full 6 Months (May–Oct
+          2026)</button>
+        <button type="button" class="preset-btn" id="resetFiltersBtn">Reset filters</button>
+      </div>
 
-  <h2>Browse requests</h2>
-  <div class="pager">
-    <button type="button" id="firstBtn" disabled>First page</button>
-    <button type="button" id="prevBtn" disabled>Previous</button>
-    <span id="pageInfo">Page 1</span>
-    <button type="button" id="nextBtn" disabled>Next</button>
+      <form id="f">
+        <label>From <input type="date" name="from" id="fromInput" value="2026-10-01" required></label>
+        <label>To <input type="date" name="to" id="toInput" value="2026-10-31" required></label>
+        <label>Site
+          <select name="site_id" id="site_id">
+            <option value="">All sites</option>
+            <option value="11">11 — Singapore</option>
+            <option value="12">12 — Sydney</option>
+            <option value="13">13 — Jakarta</option>
+          </select>
+        </label>
+        <label>Responder
+          <select name="responder_id" id="responder_id">
+            <option value="">All responders</option>
+          </select>
+        </label>
+        <label>Within target
+          <select name="within_target" id="within_target">
+            <option value="">Any</option>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </label>
+        <label>Completed late
+          <select name="late" id="late">
+            <option value="">Any</option>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </label>
+        <label>Sort
+          <select name="sort" id="sort">
+            <option value="id">ID ↑</option>
+            <option value="-id">ID ↓</option>
+            <option value="response_business_minutes">Response min ↑</option>
+            <option value="-response_business_minutes">Response min ↓</option>
+          </select>
+        </label>
+        <label>Page size
+          <select name="limit" id="limit">
+            <option value="25">25</option>
+            <option value="50" selected>50</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+          </select>
+        </label>
+        <button type="submit">Run report</button>
+      </form>
+      <p id="status" class="status-line"></p>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="kpi-label">Total Requests in Range</div>
+        <div class="kpi-value num" id="kpiTotal">—</div>
+        <div class="kpi-sub" id="kpiRange">Select a date range</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Responded Within Target</div>
+        <div class="kpi-value num" id="kpiTarget">—</div>
+        <div class="kpi-sub" id="kpiTargetSub">of responded requests</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Completed Late</div>
+        <div class="kpi-value num" id="kpiLate">—</div>
+        <div class="kpi-sub" id="kpiLateSub">of completed with deadline</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Report Query Time</div>
+        <div class="kpi-value num" id="kpiTime">—</div>
+        <div class="kpi-sub">from live in-memory store</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-head">
+        <h2>Responders Summary</h2>
+        <span class="status-line">Click any responder row to filter requests below</span>
+      </div>
+      <div class="table-wrap">
+        <table id="responders">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Responder</th>
+              <th>Requests</th>
+              <th>Within target</th>
+              <th>Target rate</th>
+              <th>Completed late</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-head">
+        <h2>Browse Requests</h2>
+        <div class="pager">
+          <button type="button" id="firstBtn" disabled>First</button>
+          <button type="button" id="prevBtn" disabled>← Previous</button>
+          <span id="pageInfo">Page 1</span>
+          <button type="button" id="nextBtn" disabled>Next →</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="report">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Site</th>
+              <th>Responder</th>
+              <th>Response (business min)</th>
+              <th>Within target</th>
+              <th>Completed late</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
   </div>
-  <table id="report">
-    <thead><tr><th>ID</th><th>Site</th><th>Responder</th><th>Response (business min)</th><th>Within target</th><th>Completed late</th></tr></thead>
-    <tbody></tbody>
-  </table>
 
-  <script>
-    const SITES = { 11: "Singapore", 12: "Sydney", 13: "Jakarta" };
-    let cursorHistory = [null];
-    let pageIndex = 0;
-    let nextCursor = null;
-
-    const cell = (text, cls) => {
-      const td = document.createElement("td");
-      td.textContent = text;
-      if (cls) td.className = cls;
-      return td;
-    };
-    const yesNo = (v, badWhenTrue) => {
-      if (v === null) return cell("-");
-      const bad = badWhenTrue ? v : !v;
-      return cell(v ? "Yes" : "No", bad ? "late" : "ok");
-    };
-    function fill(table, rows) {
-      const body = table.querySelector("tbody");
-      body.replaceChildren();
-      for (const cells of rows) {
-        const tr = document.createElement("tr");
-        cells.forEach((c) => tr.appendChild(c));
-        body.appendChild(tr);
-      }
-    }
-
-    function buildBrowseParams(cursor) {
-      const fd = new FormData(document.getElementById("f"));
-      const params = new URLSearchParams();
-      for (const [k, v] of fd.entries()) {
-        if (v !== "") params.set(k, v);
-      }
-      if (cursor) params.set("cursor", cursor);
-      return params;
-    }
-
-    async function loadSummary() {
-      const fd = new FormData(document.getElementById("f"));
-      const params = new URLSearchParams({ from: fd.get("from"), to: fd.get("to") });
-      const res = await fetch("/api/sla-report?" + params);
-      const data = await res.json();
-      if (!res.ok) throw new Error(res.status + ": " + (data.error || "unknown"));
-
-      const select = document.getElementById("responder_id");
-      const current = select.value;
-      select.replaceChildren(new Option("All responders", ""));
-      for (const r of data.responders) {
-        select.appendChild(new Option(`${r.name} (#${r.id})`, String(r.id)));
-      }
-      select.value = current;
-
-      fill(document.getElementById("responders"), data.responders.map((r) => [
-        cell(r.id), cell(r.name), cell(r.requests), cell(r.within_target), cell(r.completed_late),
-      ]));
-      return data.requests.length;
-    }
-
-    async function loadPage(cursor) {
-      const status = document.getElementById("status");
-      const params = buildBrowseParams(cursor);
-      const res = await fetch("/api/requests?" + params);
-      const body = await res.json();
-      if (!res.ok) throw new Error(res.status + ": " + (body.error || "unknown"));
-      nextCursor = body.next_cursor;
-      fill(document.getElementById("report"), body.data.map((r) => [
-        cell(r.id),
-        cell(SITES[r.site_id] || r.site_id),
-        cell(r.responder ? `${r.responder} (#${r.responder_id})` : "-"),
-        cell(r.response_business_minutes ?? "-"),
-        yesNo(r.within_target, false),
-        yesNo(r.completed_late, true),
-      ]));
-      document.getElementById("pageInfo").textContent = `Page ${pageIndex + 1} (${body.data.length} rows)`;
-      document.getElementById("firstBtn").disabled = pageIndex === 0;
-      document.getElementById("prevBtn").disabled = pageIndex === 0;
-      document.getElementById("nextBtn").disabled = !nextCursor;
-      status.textContent = `Showing ${body.data.length} rows on page ${pageIndex + 1}`;
-    }
-
-    document.getElementById("f").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const status = document.getElementById("status");
-      status.textContent = "Loading...";
-      cursorHistory = [null];
-      pageIndex = 0;
-      try {
-        const total = await loadSummary();
-        await loadPage(null);
-        status.textContent += ` (total in date range: ${total})`;
-      } catch (err) {
-        status.textContent = "Error " + err.message;
-      }
-    });
-
-    document.getElementById("nextBtn").addEventListener("click", async () => {
-      if (!nextCursor) return;
-      pageIndex += 1;
-      cursorHistory[pageIndex] = nextCursor;
-      await loadPage(nextCursor);
-    });
-
-    document.getElementById("prevBtn").addEventListener("click", async () => {
-      if (pageIndex === 0) return;
-      pageIndex -= 1;
-      await loadPage(cursorHistory[pageIndex]);
-    });
-
-    document.getElementById("firstBtn").addEventListener("click", async () => {
-      pageIndex = 0;
-      await loadPage(null);
-    });
-  </script>
+  <script src="/client.js"></script>
 </body>
+
 </html>
