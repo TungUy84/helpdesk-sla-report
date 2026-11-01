@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
-export function createApp() {
+export function createApp({ store } = {}) {
   const app = express();
 
   app.use(express.static(path.join(here, "..", "public")));
@@ -14,7 +14,8 @@ export function createApp() {
   });
 
   app.get("/ready", (req, res) => {
-    // TODO: answer 200 {"ready": true} once your app can serve six-month reports (level 2).
+    // Ready once the store has finished its initial load of the change feed
+    if (store && store.ready) return res.json({ ready: true });
     res.status(503).json({ ready: false });
   });
 
