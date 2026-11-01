@@ -3,6 +3,14 @@
 <head>
   <meta charset="utf-8">
   <title>Response-time report</title>
+  <style>
+    body { font-family: sans-serif; margin: 1.5rem; }
+    table { border-collapse: collapse; margin: 0.5rem 0 1.5rem; }
+    th, td { border: 1px solid #999; padding: 4px 10px; text-align: left; }
+    th { background: #eee; }
+    .late, .miss { color: #b00020; font-weight: bold; }
+    .ok { color: #0a7d2c; }
+  </style>
 </head>
 <body>
   <h1>Response-time report</h1>
@@ -12,18 +20,70 @@
     <button type="submit">Run report</button>
   </form>
   <p id="status"></p>
-  <table id="report" border="1">
-    <thead></thead>
+
+  <h2>Responders</h2>
+  <table id="responders">
+    <thead><tr><th>Responder</th><th>Requests</th><th>Within target</th><th>Completed late</th></tr></thead>
     <tbody></tbody>
   </table>
+
+  <h2>Requests</h2>
+  <table id="report">
+    <thead><tr><th>ID</th><th>Site</th><th>Responder</th><th>Response (business min)</th><th>Within target</th><th>Completed late</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
   <script>
+    const SITES = { 11: "Singapore", 12: "Sydney", 13: "Jakarta" };
+    const cell = (text, cls) => {
+      const td = document.createElement("td");
+      td.textContent = text;
+      if (cls) td.className = cls;
+      return td;
+    };
+    // Show true/false/null as Yes/No/-
+    const yesNo = (v, badWhenTrue) => {
+      if (v === null) return cell("-");
+      const bad = badWhenTrue ? v : !v;
+      return cell(v ? "Yes" : "No", bad ? "late" : "ok");
+    };
+    function fill(table, rows) {
+      const body = table.querySelector("tbody");
+      body.replaceChildren();
+      for (const cells of rows) {
+        const tr = document.createElement("tr");
+        cells.forEach((c) => tr.appendChild(c));
+        body.appendChild(tr);
+      }
+    }
+
     document.getElementById("f").addEventListener("submit", async (e) => {
       e.preventDefault();
+      const status = document.getElementById("status");
+      status.textContent = "Loading...";
       const params = new URLSearchParams(new FormData(e.target));
-      const res = await fetch("/api/sla-report?" + params);
-      const data = await res.json();
-      // TODO: render `data` into the table.
-      document.getElementById("status").textContent = res.status + " " + JSON.stringify(data);
+      try {
+        const res = await fetch("/api/sla-report?" + params);
+        const data = await res.json();
+        if (!res.ok) {
+          status.textContent = "Error " + res.status + ": " + (data.error || "unknown");
+          return;
+        }
+        status.textContent = data.requests.length + " requests from " + data.from + " to " + data.to;
+        fill(document.getElementById("responders"), data.responders.map((r) => [
+          cell(r.name), cell(r.requests), cell(r.within_target), cell(r.completed_late),
+        ]));
+        fill(document.getElementById("report"), data.requests.map((r) => [
+          cell(r.id),
+          cell(SITES[r.site_id] || r.site_id),
+          cell(r.responder ?? "-"),
+          cell(r.response_business_minutes ?? "-"),
+          yesNo(r.within_target, false),
+          yesNo(r.completed_late, true),
+        ]));
+      } catch (err) {
+        status.textContent = "Request failed: " + err.message;
+      }
     });
   </script>
 </body>

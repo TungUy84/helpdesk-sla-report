@@ -1,6 +1,7 @@
 import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildReport, parseRange } from "./report.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -25,10 +26,10 @@ export function createApp({ store } = {}) {
   });
 
   app.get("/api/sla-report", (req, res) => {
-    // TODO: implement the response-time report here.
-    // Query params: from=YYYY-MM-DD, to=YYYY-MM-DD.
-    // Use the client in src/helpdesk.js to call the helpdesk API.
-    res.status(501).json({ error: "not implemented" });
+    const range = parseRange(req.query);
+    if (range.error) return res.status(400).json({ error: range.error });
+    if (!store || !store.ready) return res.status(503).json({ error: "not ready" });
+    res.json(buildReport(store, range.from, range.to));
   });
 
   return app;
