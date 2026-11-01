@@ -2,6 +2,7 @@ import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildReport, parseRange } from "./report.js";
+import { browseRequests, parseBrowseQuery } from "./browse.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -21,8 +22,10 @@ export function createApp({ store } = {}) {
   });
 
   app.get("/api/requests", (req, res) => {
-    // TODO (level 4): filters, sorting and cursor pagination, see docs/contract.md.
-    res.status(501).json({ error: "not implemented" });
+    const parsed = parseBrowseQuery(req.query);
+    if (parsed.error) return res.status(400).json({ error: parsed.error });
+    if (!store || !store.ready) return res.status(503).json({ error: "not ready" });
+    res.json(browseRequests(store, parsed));
   });
 
   app.get("/api/sla-report", (req, res) => {
